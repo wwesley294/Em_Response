@@ -106,9 +106,10 @@ def build_model():
     return model
 
 
-def evaluate_model(model, X_test, Y_test, category_names):
+def evaluate_model(model, X_test, y_test, category_names):
     y_pred = model.predict(X_test)
     df_ypred = pd.DataFrame(y_pred)
+    df_ypred.columns = y_test.columns
 
     import warnings
     warnings.filterwarnings('ignore')
@@ -158,7 +159,7 @@ def main():
 
 def main():
     database_filepath = 'em_comm.db'
-    model_filepath = 'em_comm_ide.joblib'
+    model_filepath = 'em_comm.joblib'
 
     print('Loading data...\n    DATABASE: {}'.format(database_filepath))
     X, y, category_names = load_data(database_filepath)
