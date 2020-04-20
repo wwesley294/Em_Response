@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 
 
 '''
-process_data.py is a data ETL pipeline that prepares the message and category data for the machine learning pipeline.
+process_data.py is a data ETL pipeline that prepares the message and category data for the ML pipeline.
 
 '''
 
