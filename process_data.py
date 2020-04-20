@@ -45,7 +45,7 @@ def clean_data(df):
     return df
 
 
-# save_data deposits the new DataFrame to a database.
+# save_data takes two arguments of the new DataFrame and file path. Deposits the new DataFrame to a database.
 def save_data(df, database_filepath):
 
     # Create a SQLite database and save the DataFrame as table "comm".
