@@ -3,7 +3,6 @@ import plotly
 import pandas as pd
 import re
 from sqlalchemy import create_engine
-import pickle
 
 import nltk
 import ssl
@@ -16,7 +15,6 @@ from nltk.tokenize import word_tokenize
 from flask import Flask
 from flask import render_template, request, jsonify
 from plotly.graph_objs import Bar
-from sklearn.externals import joblib
 
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline, FeatureUnion
@@ -29,10 +27,11 @@ from sklearn.ensemble import RandomForestClassifier
 import joblib
 
 
+# Initiate Flask.
 app = Flask(__name__)
 
 
-# tokenize
+# tokenize takes a text argument and returns a list of tokenized/lemmatized words.
 def tokenize(text):
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
@@ -43,7 +42,8 @@ def tokenize(text):
     
     return clean_tokens
 
-
+# StartingVerbExtractor detects if the first word of the sentence is VB/VBP.
+# Return 1 if true and return 0 if false.
 class StartingVerbExtractor(BaseEstimator, TransformerMixin):
 
     def starting_verb(self, text):
@@ -63,21 +63,20 @@ class StartingVerbExtractor(BaseEstimator, TransformerMixin):
         return pd.DataFrame(X_tagged)
 
 
-# load data
+# Load data prepared by process_data.py.
 engine = create_engine('sqlite:////home/workspace/models/em_comm.db')
 df = pd.read_sql_table('comm', engine)
 
-# load model
+# Load the ML model preserved by train_classifier.py.
 model = joblib.load('/home/workspace/app/em_comm.joblib')
 
 
-# index webpage displays cool visuals and receives user input text for model
+# Index webpage, displays cool visuals, and receives user input text for model.
 @app.route('/')
 @app.route('/index')
 def index():
     
-    # extract data needed for visuals
-    # TODO: Below is an example - modify to extract data for your own visuals
+    # Extract data needed for visuals.
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
     
@@ -86,8 +85,7 @@ def index():
     top_cats = list(df_top.index)
     
     
-    # create visuals
-    # TODO: Below is an example - modify to create your own visuals
+    # Create visuals.
     graphs = [
         {'data': [Bar(x=genre_names, y=genre_counts)],
          'layout': {'title': 'Distribution of Message Genres',
@@ -100,7 +98,7 @@ def index():
     ]
     
     
-    # encode plotly graphs in JSON
+    # Encode plotly graphs in JSON.
     ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
     
@@ -108,17 +106,18 @@ def index():
     return render_template('master.html', ids=ids, graphJSON=graphJSON)
 
 
-# web page that handles user query and displays model results
+# Web page to handle user query and display model results.
 @app.route('/go')
 def go():
-    # save user input in query
+
+    # Save user input in query.
     query = request.args.get('query', '') 
 
-    # use model to predict classification for query
+    # Use model to predict classification for query.
     classification_labels = model.predict([query])[0]
     classification_results = dict(zip(df.columns[4:], classification_labels))
 
-    # This will render the go.html Please see that file. 
+    # Render the go.html file.
     return render_template(
         'go.html',
         query=query,

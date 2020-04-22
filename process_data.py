@@ -1,54 +1,58 @@
 import sys
-
 import numpy as np
 import pandas as pd
 import matplotlib as plt
 from sqlalchemy import create_engine
 
 
+'''
+
+process_data is a data ETL pipeline for message and category data. It prepares the data for the ML pipeline in the next step.
+
+'''
+
+# load_data takes two arguments of file path and return a concatenated DataFrame.
 def load_data(messages_filepath, categories_filepath):
     
-    # load messages dataset
+    # Load message and category data.
     df_messages = pd.read_csv(messages_filepath)
-    # load categories dataset
     df_categories = pd.read_csv(categories_filepath)
     
-    # create a dataframe of the 36 individual category columns
+    # Expand the columns to house individual categories and create new column names.
     df_categories = df_categories['categories'].str.split(';', expand=True)
-    # select the first row of the categories dataframe
     row = df_categories.iloc[0]
-    # extract a list of new column names for categories.
     category_colnames = [item[:-2] for item in row]
-    # rename the columns of `categories`
     df_categories.columns = category_colnames
     
-    # set each value to be the last character of the string
+    # Convert the new column values into 1 and 0.
     for col in df_categories.columns:
         df_categories[col] = df_categories[col].str[-1]
-        # convert column from string to numeric
         df_categories[col] = df_categories[col].astype(int)
     
-    # drop the original categories column from `df`
-    # df_categories = df_categories.drop(columns='categories')    
-    # concatenate the original dataframe with the new `categories` dataframe
+    # Concatenate the message DataFrame and new category DataFrame.
     df = pd.concat([df_messages, df_categories], axis=1)
     
     return df
 
-
+# clean_data takes a DataFrame as argument, filters unnecessary data, and returns a clean DataFrame.
 def clean_data(df):
+
     df = df.drop_duplicates(subset=['message'], keep=False)
     df = df.drop(columns=['id','original'])
     df = df.dropna(axis=0, how='any')
+
     return df
 
-
+# save_data takes a DataFrame and file path as arguments.
+# Store data in a new database and table.
 def save_data(df, database_filepath):
+
     engine = create_engine('sqlite:///' + database_filepath)
     df.to_sql('comm', engine, index=False)
 
-
+# main provides file paths and executes the functions above in order.
 def main():
+
     messages_filepath = '/home/workspace/data/disaster_messages.csv'
     categories_filepath = '/home/workspace/data/disaster_categories.csv'
     database_filepath = '/home/workspace/models/em_comm.db'
